@@ -56,8 +56,6 @@ while ($row = mysqli_fetch_assoc($resultlist)) {
     $fullname = $row['m_firstname'] . " " . $row['m_name'] . " " . $row['m_lastname'];
     $groupedData[$fullname][] = $row;
 }
-
-
 ?>
 
 <!doctype html>
@@ -120,82 +118,85 @@ while ($row = mysqli_fetch_assoc($resultlist)) {
                             <label for="endDate">ถึง:</label>
                             <input type="date" name="endDate" id="endDate" class="form-control"
                                 value="<?php echo isset($_POST['endDate']) ? $_POST['endDate'] : ''; ?>">
+                                
                         </div>
+                        
                     </div>
                     <div class="form-group d-flex">
-                        <button type="submit" class="btn btn-primary mr-2">ค้นหา</button>
+                    <button type="submit" class="btn btn-primary mr-2">ค้นหา</button>
                         <button type="button" class="btn btn-secondary mr-2"
                             onclick="window.location.href = 'admin.php';">รีเซ็ท</button>
-                        <a href="export_excel.php" class="btn btn-success">ส่งออก Excel</a>
-
-
+                        <div class="col  d-flex justify-content-end">
+                            <a href="export_pdf.php?searchName=<?php echo urlencode($searchName); ?>&startDate=<?php echo $startDate; ?>&endDate=<?php echo $endDate; ?>"
+                                class="btn btn-success">รายงานPDF</a>
+                        </div>
                     </div>
+                </form>
 
+                <!-- ตารางข้อมูล -->
+                <?php if (!empty($groupedData)): ?>
+                    <?php foreach ($groupedData as $fullname => $records): ?>
+                        <h4><?php echo $fullname; ?> (กลุ่มสาระการเรียนรู้: <?php echo $records[0]['m_position']; ?>)</h4>
 
-                    <!-- ตารางข้อมูล -->
-                    <?php if (!empty($groupedData)): ?>
-                        <?php foreach ($groupedData as $fullname => $records): ?>
-                            <h4><?php echo $fullname; ?> (ตำแหน่ง: <?php echo $records[0]['m_position']; ?>)</h4>
+                        <?php
+                        // Initialize counters for statuses
+                        $lateCount = 0;
+                        $normalCount = 0;
+                        $absentCount = 0;
 
-                            <?php
-                            // Initialize counters for statuses
-                            $lateCount = 0;
-                            $normalCount = 0;
-                            $absentCount = 0;
-
-                            // Loop through records and count statuses
-                            foreach ($records as $value) {
-                                if (is_null($value["workin"])) {
-                                    $absentCount++;
-                                } elseif ($value["workin"] > '08:30:00') {
-                                    $lateCount++;
-                                } else {
-                                    $normalCount++;
-                                }
+                        // Loop through records and count statuses
+                        foreach ($records as $value) {
+                            if (is_null($value["workin"])) {
+                                $absentCount++;
+                            } elseif ($value["workin"] > '08:30:00') {
+                                $lateCount++;
+                            } else {
+                                $normalCount++;
                             }
-                            ?>
+                        }
+                        ?>
 
-                            <p>สถานะการทำงาน:
-                                สาย: <?php echo $lateCount; ?> ครั้ง,
-                                ปกติ: <?php echo $normalCount; ?> ครั้ง,
-                                ขาด: <?php echo $absentCount; ?> ครั้ง
-                            </p>
+                        <p>สถานะการทำงาน:
+                            สาย: <?php echo $lateCount; ?> ครั้ง,
+                            ปกติ: <?php echo $normalCount; ?> ครั้ง,
+                            ขาด: <?php echo $absentCount; ?> ครั้ง
+                        </p>
 
-                            <table class="table table-bordered" style="background-color:#ffffff;">
-                                <thead>
-                                    <tr class="table-Active">
-                                        <td>วันที่</td>
-                                        <td>เวลาเข้างาน</td>
-                                        <td>เวลาออกงาน</td>
-                                        <td>สถานะ</td>
+                        <table class="table table-bordered" style="background-color:#ffffff;">
+                            <thead>
+                                <tr class="table-Active">
+                                    <td>วันที่</td>
+                                    <td>เวลาเข้างาน</td>
+                                    <td>เวลาออกงาน</td>
+                                    <td>สถานะ</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($records as $value): ?>
+                                    <tr>
+                                        <td><?php echo date('d-m-Y', strtotime($value["workdate"])); ?></td> <!-- แปลงวันที่ -->
+                                        <td><?php echo $value["workin"]; ?></td>
+                                        <td><?php echo $value["workout"]; ?></td>
+                                        <td>
+                                            <?php
+                                            if (is_null($value["workin"])) {
+                                                echo "<span style='color: orange;'>ขาด</span>";
+                                            } elseif ($value["workin"] > '08:30:00') {
+                                                echo "<span style='color: red;'>สาย</span>";
+                                            } else {
+                                                echo "<span style='color: green;'>ปกติ</span>";
+                                            }
+                                            ?>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($records as $value): ?>
-                                        <tr>
-                                            <td><?php echo $value["workdate"]; ?></td>
-                                            <td><?php echo $value["workin"]; ?></td>
-                                            <td><?php echo $value["workout"]; ?></td>
-                                            <td>
-                                                <?php
-                                                if (is_null($value["workin"])) {
-                                                    echo "<span style='color: orange;'>ขาด</span>";
-                                                } elseif ($value["workin"] > '08:30:00') {
-                                                    echo "<span style='color: red;'>สาย</span>";
-                                                } else {
-                                                    echo "<span style='color: green;'>ปกติ</span>";
-                                                }
-                                                ?>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                            <br>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="alert alert-warning">ไม่พบข้อมูลบุคลากรที่คุณค้นหา</div>
-                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <br>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="alert alert-warning">ไม่พบข้อมูลบุคลากรที่คุณค้นหา</div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

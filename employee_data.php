@@ -87,7 +87,7 @@ $resultemp = mysqli_query($condb, $queryemp) or die("Error in query: $queryemp "
                                     <th>คำนำหน้า</th>
                                     <th>ชื่อ</th>
                                     <th>นามสกุล</th>
-                                    <th>ตำแหน่ง</th>
+                                    <th>กลุ่มสาระการเรียนรู้</th>
                                     <th>ประเภท</th>
                                     <th>การจัดการ</th>
                                 </tr>

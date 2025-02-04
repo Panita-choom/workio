@@ -34,7 +34,7 @@
               <label for="exampleInputPassword1">รหัสผ่าน</label>
               <input type="password" class="form-control" id="exampleInputPassword1" name="m_password" placeholder="รหัสผ่าน" minlength="2"  required>
             </div>
-            <button type="submit" class="btn btn-primary">LOGIN</button>
+            <button type="submit" class="btn btn-primary ">LOGIN</button>
           </form>
         </div>
       </div>

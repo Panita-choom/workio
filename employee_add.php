@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <br>
                 <div class="row align-items-center mb-3">
                     <div class="col">
-                        <h3>แก้ไขข้อมูลบุคลากร</h3>
+                        <h3>เพิ่มข้อมูลบุคลากร</h3>
                     </div>
                     <div class="col text-right">
                         <a href="employee_data.php" class="btn btn-secondary">กลับ</a>
@@ -99,17 +99,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
 
                     <div class="form-group">
-                        <label for="m_position">ตำแหน่ง:</label>
-                        <input type="text" name="m_position" id="m_position" class="form-control" required>
+                        <label for="m_position">กลุ่มสาระการเรียนรู้:</label>
+                        <select name="m_position" id="m_position" class="form-control" required>
+                            <option value="การงานอาชีพและเทคโนโลยี">กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี</option>
+                            <option value="ปฐมวัย">กลุ่มสาระการเรียนรู้ปฐมวัย</option>
+                            <option value="วิชาศิลปะ">กลุ่มสาระการเรียนรู้วิชาศิลปะ</option>
+                            <option value="ภาษาไทย">กลุ่มสาระการเรียนรู้ภาษาไทย</option>
+                            <option value="ภาษาต่างประเทศ">กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ</option>
+                            <option value="วิทยาศาสตร์">กลุ่มสาระการเรียนรู้วิทยาศาสตร์</option>
+                            <option value="สุขศึกษาและพลศึกษา">กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา</option>
+                            <option value="คณิตศาสตร์">กลุ่มสาระการเรียนรู้คณิตศาสตร์</option>
+                            <option value="สังคมศึกษา ศาสนา และวัฒนธรรม">กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
                         <label for="m_level">ประเภทผู้ใช้งาน:</label>
                         <select name="m_level" id="m_level" class="form-control" required>
-
                             <option value="staff">ผู้ใช้</option>
                             <option value="admin">ผู้ดูแลระบบ</option>
-
                         </select>
                     </div>
 
@@ -117,6 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 </form>
             </div>
+        </div>
+    </div>
 </body>
 
 </html>
