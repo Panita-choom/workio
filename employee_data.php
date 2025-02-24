@@ -42,6 +42,7 @@ $resultemp = mysqli_query($condb, $queryemp) or die("Error in query: $queryemp "
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <title>ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา</title>
 </head>
 
@@ -52,9 +53,9 @@ $resultemp = mysqli_query($condb, $queryemp) or die("Error in query: $queryemp "
                 <img src="img/logo.png" alt="Logo" class="img-fluid" style="max-height: 170px;">
             </div>
 
-            <div class="col col-sm-9 d-flex justify-content-center align-items-center">
-                <h3 class="text-center" align="center" style="color: white;">
-                ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา</h3>
+            <div class="col col-sm-8 d-flex justify-content-center align-items-center">
+                <h2 class="text-center" align="center" style="color: white;">
+                ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา</h2>
             </div>
         </div>
     </div>
@@ -103,10 +104,12 @@ $resultemp = mysqli_query($condb, $queryemp) or die("Error in query: $queryemp "
                                         <td><?php echo $rowemp['m_position']; ?></td>
                                         <td><?php echo $rowemp['m_level']; ?></td>
                                         <td>
-                                            <a href="employee_edit.php?id=<?php echo $rowemp['m_id']; ?>"
-                                                class="btn btn-warning btn-sm">แก้ไข</a>
-                                            <a href="employee_delete.php?id=<?php echo $rowemp['m_id']; ?>"
-                                                class="btn btn-danger btn-sm">ลบ</a>
+                                        <a href="employee_edit.php?id=<?php echo $rowemp['m_id']; ?>" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i> 
+                                    </a>
+                                    <a href="employee_delete.php?id=<?php echo $rowemp['m_id']; ?>" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-trash"></i> 
+                                    </a>
                                         </td>
                                     </tr>
                                 <?php } ?>

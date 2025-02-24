@@ -15,9 +15,9 @@
         <img src="img/logo.png" alt="Logo" class="img-fluid" style="max-height: 170px;">
       </div>
 
-      <div class="col col-sm-9 d-flex justify-content-center align-items-center">
-        <h3 class="text-center" align="center" style="color: white;">ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา
-        </h3>
+      <div class="col col-sm-8 d-flex justify-content-center align-items-center">
+        <h2 class="text-center" align="center" style="color: white;">ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา
+        </h2>
       </div>
     </div>
   </div>

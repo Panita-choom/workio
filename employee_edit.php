@@ -24,8 +24,14 @@ if (isset($_GET['id'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $m_username = $_POST['m_username'];
 
-    // ตรวจสอบว่าได้กรอกรหัสผ่านหรือไม่
-    $m_password = isset($_POST['m_password']) && !empty($_POST['m_password']) ? sha1($_POST['m_password']) : $employee['m_password']; // ใช้ SHA1 เมื่อกรอกรหัสใหม่
+    // ตรวจสอบว่าผู้ใช้กรอกรหัสผ่านใหม่หรือไม่
+    if (isset($_POST['m_password']) && !empty($_POST['m_password'])) {
+        // ใช้ password_hash() สำหรับการเข้ารหัสรหัสผ่านใหม่
+        $m_password = password_hash($_POST['m_password'], PASSWORD_DEFAULT); // การเข้ารหัสรหัสผ่าน
+    } else {
+        // ถ้าไม่มีการกรอกรหัสผ่านใหม่ ใช้รหัสผ่านเดิมจากฐานข้อมูล
+        $m_password = $employee['m_password'];
+    }
 
     $m_firstname = $_POST['m_firstname'];
     $m_name = $_POST['m_name'];
@@ -50,21 +56,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <title>แก้ไขข้อมูลบุคลากร</title>
 </head>
-
 <body style="background-color:rgb(250, 238, 255);">
     <div class="container">
         <div class="row" style="background-color: #7109c0;">
             <div class="col col-sm-3">
                 <img src="img/logo.png" alt="Logo" class="img-fluid" style="max-height: 170px;">
             </div>
-
             <div class="col col-sm-9 d-flex justify-content-center align-items-center">
                 <h3 class="text-center" align="center" style="color: white;">
                     ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา</h3>
@@ -93,7 +96,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <a href="employee_data.php" class="btn btn-secondary">กลับ</a>
                     </div>
                 </div>
-
 
                 <form method="POST" action="">
                     <div class="form-group">
@@ -143,11 +145,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <option value="คณิตศาสตร์" <?php echo ($employee['m_position'] == 'คณิตศาสตร์') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้คณิตศาสตร์</option>
                             <option value="สังคมศึกษา ศาสนา และวัฒนธรรม" <?php echo ($employee['m_position'] == 'สังคมศึกษา ศาสนา และวัฒนธรรม') ? 'selected' : ''; ?>>
                                 กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม</option>
-                                <option value="อื่นๆ" <?php echo ($employee['m_position'] == 'อื่นๆ') ? 'selected' : ''; ?>>
+                            <option value="อื่นๆ" <?php echo ($employee['m_position'] == 'อื่นๆ') ? 'selected' : ''; ?>>
                                 อื่นๆ</option>
                         </select>
                     </div>
-
 
                     <div class="form-group">
                         <label for="m_level">ประเภท:</label>
@@ -163,9 +164,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
                 </form>
-
-
             </div>
 </body>
-
 </html>

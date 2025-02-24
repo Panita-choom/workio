@@ -1,61 +1,96 @@
 <?php
 session_start();
 include('condb.php');
-$m_id = $_SESSION['m_id'];
-$m_level = $_SESSION['m_level'];
 
-if ($m_level != 'staff') {
-  Header("Location: logout.php");
+date_default_timezone_set("Asia/Bangkok");
+$datenow = date('Y-m-d');
+$timenow = date('H:i:s');
+
+if (!isset($_SESSION['m_id']) || $_SESSION['m_level'] != 'staff') {
+  header("Location: logout.php");
+  exit();
 }
 
-// query member login
-$queryemp = "SELECT * FROM tbl_emp WHERE m_id=$m_id";
-$resultm = mysqli_query($condb, $queryemp) or die("Error in query: $queryemp " . mysqli_error($condb));
+$m_id = mysqli_real_escape_string($condb, $_SESSION['m_id']);
+
+$queryemp = "SELECT * FROM tbl_emp WHERE m_id='$m_id'";
+$resultm = mysqli_query($condb, $queryemp);
 $rowm = mysqli_fetch_array($resultm);
 
-// เวลาปัจจุบัน
-$timenow = date('H:i:s');
-$datenow = date('Y-m-d');
+$queryHoliday = "SELECT * FROM tbl_holidays WHERE holiday_date = '$datenow'";
+$resultHoliday = mysqli_query($condb, $queryHoliday);
+$isHoliday = mysqli_num_rows($resultHoliday) > 0;
 
-// เวลาที่บันทึก
-$queryworkio = "SELECT MAX(workdate) as lastdate, workin, workout FROM tbl_work_io WHERE m_id=$m_id AND workdate='$datenow' ";
-$resultio = mysqli_query($condb, $queryworkio) or die("Error in query: $queryworkio " . mysqli_error($condb));
+$queryworkio = "SELECT workin, workout, status FROM tbl_work_io WHERE m_id='$m_id' AND workdate='$datenow'";
+$resultio = mysqli_query($condb, $queryworkio);
 $rowio = mysqli_fetch_array($resultio);
 
-// ตรวจสอบค่าว่างหรือ NULL
-$lastdate = isset($rowio['lastdate']) && !empty($rowio['lastdate']) ? $rowio['lastdate'] : null;
-$workin = isset($rowio['workin']) && !empty($rowio['workin']) ? $rowio['workin'] : null;
-$workout = isset($rowio['workout']) && !empty($rowio['workout']) ? $rowio['workout'] : null;
+$workin = $rowio['workin'] ?? NULL;  // ✅ ถ้าไม่มีข้อมูลให้ใส่ NULL
+$workout = $rowio['workout'] ?? NULL;  // ✅ ถ้าไม่มีข้อมูลให้ใส่ NULL
+$status = $rowio['status'] ?? NULL;
+
+// ✅ เช็คและบันทึก "ขาด" อัตโนมัติหากเกิน 18:01 น. และยังไม่มีบันทึก
+if (mysqli_num_rows($resultio) == 0 && $timenow > '18:01:00' && !$isHoliday) {
+  // แสดงข้อมูลที่กำลังจะบันทึก
+  
+
+  // สร้างคำสั่ง SQL เพื่อบันทึก "ขาด"
+  $insertAbsenceQuery = "INSERT INTO tbl_work_io (m_id, workdate, workin, workout, status) 
+                           VALUES ('$m_id', '$datenow', NULL, NULL, 'ขาด')";
+  $result = mysqli_query($condb, $insertAbsenceQuery);
+
+  // ตรวจสอบผลลัพธ์การบันทึก
+  if (!$result) {
+    echo "Error: " . mysqli_error($condb);  // แสดงข้อผิดพลาดที่เกิดขึ้น
+  } else {
+    echo "บันทึกข้อมูล 'ขาด' สำเร็จ";
+  }
+}
+
+// ✅ บันทึก "หยุด" อัตโนมัติหากเป็นวันหยุดและไม่มีบันทึก
+if ($isHoliday && !$rowio) {
+  // แสดงข้อมูลที่กำลังจะบันทึก
+  echo "m_id: " . $m_id . "<br>";
+  echo "datenow: " . $datenow . "<br>";
+
+  // สร้างคำสั่ง SQL เพื่อบันทึก "หยุด"
+  $insertHolidayQuery = "INSERT INTO tbl_work_io (m_id, workdate, workin, workout, status) 
+                           VALUES ('$m_id', '$datenow', NULL, NULL, 'หยุด')";
+  $resultHoliday = mysqli_query($condb, $insertHolidayQuery);
+
+  // ตรวจสอบผลลัพธ์การบันทึก
+  if (!$resultHoliday) {
+    echo "Error: " . mysqli_error($condb);  // แสดงข้อผิดพลาดที่เกิดขึ้น
+  } else {
+    echo "บันทึกข้อมูล 'หยุด' สำเร็จ";
+  }
+}
 ?>
+
 
 <!doctype html>
 <html lang="en">
 
 <head>
-  <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <title>ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา</title>
 </head>
 
 <body style="background-color:rgb(250, 238, 255);">
   <div class="container">
-    <div class="row " style="background-color: #7109c0;">
+    <div class="row" style="background-color:rgb(128, 21, 211);">
       <div class="col col-sm-3">
         <img src="img/logo.png" alt="Logo" class="img-fluid" style="max-height: 170px;">
       </div>
-
-      <div class="col col-sm-9 d-flex justify-content-center align-items-center">
-        <h3 class="text-center" align="center" style="color: white;">ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา
-        </h3>
+      <div class="col col-sm-8 d-flex justify-content-center align-items-center">
+        <h2 class="text-center" style="color: white;">ระบบบันทึกเวลาปฏิบัติงานบุคลากรโรงเรียนวัดธรรมนาวา</h2>
       </div>
     </div>
   </div>
 
-  </div>
   <div class="container">
     <div class="row">
       <div class="col col-sm-3">
@@ -67,162 +102,181 @@ $workout = isset($rowio['workout']) && !empty($rowio['workout']) ? $rowio['worko
         </b>
         <br>
         <a href="logout.php" class="btn btn-danger btn-sm"> LOGOUT </a>
+        <div class="alert alert-info mt-3">
+          <strong>คำอธิบายสถานะ</strong><br>
+          <span style="color: green;">มา</span>: บันทึกเวลาเข้าและออกถูกต้องตามเวลาที่กำหนด<br>
+          <span style="color: orange;">ขาด</span>: ไม่มีการบันทึกเวลาเข้าและออกในวันนั้น<br>
+          <span style="color: blue;">ไม่สมบูรณ์</span>: มีการบันทึกเวลาเข้าแต่ไม่มีการบันทึกเวลาออก<br>
+          <span style="color: red;">สาย</span>: บันทึกเวลาเข้าเกินเวลาที่กำหนด (หลัง 08:30 น.)<br>
+        </div>
       </div>
+
       <div class="col col-sm-9">
         <br>
         <h3> ลงเวลาเข้า-ออกปฏิบัติงาน <?php echo date('d-m-Y'); ?></h3>
         <form action="save.php" method="post" class="form-horizontal">
           <div class="form-group row">
             <div class="col col-sm-2">
-              <label for="m_id">รหัสบุคลากร</label>
+              <label for="m_id">รหัสพนักงาน</label>
               <input type="text" class="form-control" name="m_id" placeholder="รหัสพนักงาน"
                 value="<?php echo $rowm['m_id']; ?>" readonly>
             </div>
             <div class="col col-sm-3">
-              <label for="m_id">เวลาเข้างาน</label>
-              <?php if ($workin) { ?>
-                <input type="text" class="form-control" name="workin" value="<?php echo $workin; ?>" disabled>
+              <label for="workin">เวลาเข้างาน</label>
+              <?php if (isset($rowio['workin'])) { ?>
+                <input type="text" class="form-control" name="workin" value="<?php echo $rowio['workin']; ?>" disabled>
               <?php } else { ?>
                 <input type="text" class="form-control" name="workin" value="<?php echo date('H:i:s'); ?>" readonly>
               <?php } ?>
             </div>
             <div class="col col-sm-3">
-              <label for="m_id">เวลาออกงาน</label>
-              <?php
-              if ($timenow > '15:00:00') {
-                if ($workout) { ?>
-                  <input type="text" class="form-control" name="workout" value="<?php echo $workout; ?>" disabled>
+              <label for="workout">เวลาออกงาน</label>
+              <?php if ($timenow > '15:00:00') {
+                if (isset($rowio['workout'])) { ?>
+                  <input type="text" class="form-control" name="workout" value="<?php echo $rowio['workout']; ?>" disabled>
                 <?php } else { ?>
                   <input type="text" class="form-control" name="workout" value="<?php echo date('H:i:s'); ?>" readonly>
-                  <?php
-                }
+                <?php }
               } else {
-                echo '<br><font color="red"> หลัง 15.00 น. </font>';
-              }
-              ?>
+                echo '<br><font color="red">หลัง 15.00 น.</font>';
+              } ?>
             </div>
             <div class="col col-sm-3">
               <label>-</label>
-              <button type="submit" class="btn btn-success">บันทึกเวลาเข้า-ออกปฏิบัติงาน</button>
+              <?php if ($timenow <= '18:00:00') { ?>
+                <button type="submit" class="btn btn-success">บันทึกเวลาเข้า-ออกปฏิบัติงาน</button>
+              <?php } else { ?>
+                <button type="button" class="btn btn-secondary" disabled>หมดเวลาบันทึก</button>
+              <?php } ?>
             </div>
           </div>
         </form>
+
 
         <h3>ประวัติบันทึกเวลาปฏิบัติงาน</h3>
 
-        <!-- ฟอร์มกรองข้อมูลตามช่วงวันที่ -->
+        <!-- ฟอร์มกรองข้อมูลตามเดือนและปี -->
         <form action="" method="get">
           <div class="form-group row">
-            <div class="col col-sm-3 ">
-              <label for="start_date">เลือกวันที่เริ่มต้น:</label>
-              <input type="date" class="form-control" name="start_date"
-                value="<?php echo isset($_GET['start_date']) ? $_GET['start_date'] : ''; ?>">
-            </div>
             <div class="col col-sm-3">
-              <label for="end_date">เลือกวันที่สิ้นสุด:</label>
-              <input type="date" class="form-control" name="end_date"
-                value="<?php echo isset($_GET['end_date']) ? $_GET['end_date'] : ''; ?>">
+              <label for="month">เลือกเดือน:</label>
+              <select class="form-control" name="month">
+                <?php
+                $months = [
+                  "01" => "มกราคม",
+                  "02" => "กุมภาพันธ์",
+                  "03" => "มีนาคม",
+                  "04" => "เมษายน",
+                  "05" => "พฤษภาคม",
+                  "06" => "มิถุนายน",
+                  "07" => "กรกฎาคม",
+                  "08" => "สิงหาคม",
+                  "09" => "กันยายน",
+                  "10" => "ตุลาคม",
+                  "11" => "พฤศจิกายน",
+                  "12" => "ธันวาคม"
+                ];
+                $selectedMonth = isset($_GET['month']) ? $_GET['month'] : date('m');
+                foreach ($months as $num => $name) {
+                  $selected = ($selectedMonth == $num) ? 'selected' : '';
+                  echo "<option value='$num' $selected>$name</option>";
+                }
+                ?>
+              </select>
             </div>
+
+            <div class="col col-sm-3">
+              <label for="year">เลือกปี:</label>
+              <select class="form-control" name="year">
+                <?php
+                $queryYear = "SELECT DISTINCT YEAR(workdate) AS year FROM tbl_work_io WHERE m_id = $m_id ORDER BY year DESC";
+                $resultYear = mysqli_query($condb, $queryYear);
+                $selectedYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+                while ($rowYear = mysqli_fetch_assoc($resultYear)) {
+                  $selected = ($selectedYear == $rowYear['year']) ? 'selected' : '';
+                  echo "<option value='" . $rowYear['year'] . "' $selected>" . $rowYear['year'] . "</option>";
+                }
+                ?>
+              </select>
+            </div>
+
             <div class="col col-sm-3 d-flex align-items-end">
-              <button type="submit" class="btn btn-primary">ค้นหา</button>
-              <!-- ปุ่มรีเซ็ทเพื่อล้างค่าในฟอร์ม -->
-              <button type="reset" class="btn btn-secondary ml-2" onclick="resetForm()">รีเซ็ท</button>
+              <button type="submit" class="btn btn-info">
+                <i class="fas fa-search"></i> ค้นหา
+              </button>
+              <button type="button" class="btn btn-warning ml-2" onclick="window.location.href = 'profile.php';">
+                <i class="fas fa-sync-alt"></i> รีเซ็ต
+              </button>
             </div>
           </div>
-
-          <script>
-            // ฟังก์ชั่นรีเซ็ทฟอร์มเพื่อทำการล้างข้อมูล
-            function resetForm() {
-              // คืนค่าการค้นหาเป็นค่าว่าง
-              window.location.href = window.location.pathname; // รีเฟรชหน้าปัจจุบัน
-            }
-          </script>
-
-
-
-
         </form>
 
-        <?php
-        // รับค่าช่วงวันที่ที่กรอง
-        $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
-        $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
+        <h3>ประวัติการบันทึกเวลา</h3>
 
-        // คำสั่ง SQL ที่กรองตามวันที่
-        $querylist = "SELECT * FROM tbl_work_io WHERE m_id = $m_id";
-
-        if ($start_date && $end_date) {
-          $querylist .= " AND workdate BETWEEN '$start_date' AND '$end_date'";
-        } elseif ($start_date) {
-          $querylist .= " AND workdate >= '$start_date'";
-        } elseif ($end_date) {
-          $querylist .= " AND workdate <= '$end_date'";
-        }
-
-        $querylist .= " ORDER BY workdate DESC";
-        $resultlist = mysqli_query($condb, $querylist) or die("Error:" . mysqli_error($condb));
-
-        // ตัวแปรนับจำนวนสถานะ
-        $absentCount = 0;
-        $lateCount = 0;
-        $normalCount = 0;
-
-        echo "
-          <table class='table table-bordered' style='background-color:#ffffff;'>
+        <table class="table table-bordered" style="background-color:#ffffff;">
           <thead>
-            <tr class='table-Active'>
+            <tr class="table-Active">
               <td>วันที่</td>
               <td>เวลาเข้างาน</td>
               <td>เวลาออกงาน</td>
               <td>สถานะ</td>
             </tr>
           </thead>
-          ";
+          <tbody>
+  <?php
+  $month = isset($_GET['month']) ? $_GET['month'] : date('m');
+  $year = isset($_GET['year']) ? $_GET['year'] : date('Y');
 
-        foreach ($resultlist as $value) {
-          echo "<tr>";
+  $querylist = "SELECT workdate, workin, workout, status 
+  FROM tbl_work_io 
+  WHERE m_id = $m_id 
+  AND MONTH(workdate) = '$month' 
+  AND YEAR(workdate) = '$year' 
+  AND workdate <= CURDATE()
+  ORDER BY workdate DESC";
+  $resultlist = mysqli_query($condb, $querylist);
 
-          // แปลงวันที่จาก 'YYYY-MM-DD' เป็น 'DD-MM-YYYY'
-          $formattedDate = date('d-m-Y', strtotime($value["workdate"]));
-          echo "<td>" . $formattedDate . "</td>";
+  while ($row = mysqli_fetch_assoc($resultlist)) {
+    echo "<tr>";
+    echo "<td>" . date('d-m-Y', strtotime($row['workdate'])) . "</td>";
+    echo "<td>" . (($row['workin'] == "00:00:00" || is_null($row['workin'])) ? "-" : $row['workin']) . "</td>";
+    echo "<td>" . (($row['workout'] == "00:00:00" || is_null($row['workout'])) ? "-" : $row['workout']) . "</td>";
 
-          echo "<td>" . $value["workin"] . "</td>";
-          echo "<td>" . $value["workout"] . "</td>";
+    // แสดงสถานะจากฐานข้อมูล
+    $status = $row['status'];
+    if ($status == 'ขาด') {
+      echo "<td><span style='color: orange;'>ขาด</span></td>";
+    } elseif ($status == 'ไม่สมบูรณ์') {
+      echo "<td><span style='color: blue;'>ไม่สมบูรณ์</span></td>";
+    } elseif ($status == 'สาย') {
+      echo "<td><span style='color: red;'>สาย</span></td>";
+    } elseif ($status == 'มา') {
+      echo "<td><span style='color: green;'>มา</span></td>";
+    } elseif ($status == 'ลากิจ') {
+      echo "<td><span style='color: purple;'>ลากิจ</span></td>";
+    } elseif ($status == 'ลาป่วย') {
+      echo "<td><span style='color: pink;'>ลาป่วย</span></td>";
+    }  elseif ($status == 'ราชการ') {
+      echo "<td><span style='color: black;'>ราชการ</span></td>";
+    }else {
+      echo "<td><span style='color: gray;'>ไม่ทราบสถานะ</span></td>";
+    }
+    echo "</tr>";
+  }
+  ?>
+</tbody>
 
-          // ตรวจสอบสถานะ
-          if (is_null($value["workin"])) {
-            echo "<td><span style='color: orange;'>ขาด</span></td>";
-            $absentCount++; // เพิ่มจำนวนการขาด
-          } elseif ($value["workin"] > '08:30:00') {
-            echo "<td><span style='color: red;'>สาย</span></td>";
-            $lateCount++; // เพิ่มจำนวนการสาย
-          } else {
-            echo "<td><span style='color: green;'>ปกติ</span></td>";
-            $normalCount++; // เพิ่มจำนวนการปกติ
-          }
 
-          echo "</tr>";
-        }
+        </table>
 
-        echo '</table>';
-        ?>
-
-        
 
       </div>
     </div>
   </div>
 
-  <!-- Optional JavaScript -->
-  <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
-    integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
-    crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-    crossorigin="anonymous"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
-    integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
-    crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 
 </html>
